@@ -1,0 +1,115 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" type="text/css" href="styles.css" media="screen" />
+	 	<script src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+		<script type="text/javascript">
+			
+			var userName;
+			var userColor;
+			var socketio = io.connect("127.0.0.1:3000");
+			var objDiv = $('#chat');
+
+			function scrollToBottom(elm_id) {
+				var elm = document.getElementById(elm_id);
+				try {
+					elm.scrollTop = elm.scrollHeight;
+				} catch (e) {
+					var f = document.createElement("input");
+					if (f.setAttribute) f.setAttribute("type", "text")
+					if (elm.appendChild) elm.appendChild(f);
+					f.style.width = "0px";
+					f.style.height = "0px";
+					if (f.focus) f.focus();
+					if (elm.removeChild) elm.removeChild(f);
+				}
+			}
+
+			function get_random_color() {
+				var letters = '0123456789ABCDEF'.split('');
+				var color = '#';
+				for (var i = 0; i < 6; i++) {
+					color += letters[Math.round(Math.random() * 15)];
+				}
+				return color;
+			}
+
+			function enterChat() {
+				userName = document.getElementById("name").value;
+				userColor = get_random_color();
+				$("#userPanelLogin").hide();
+				$("#userPanel").append("Current user: " + userName);
+				$("#userPanel").show();
+				$("#chatControls").show();
+
+			}
+
+			socketio.on("message_to_client", function(data) {
+				scrollToBottom("chat");
+				console.log("Incoming : " + data.message);
+				console.log("Color : " + data.color);
+				$("#onlineUsrs").html("<div> Online users: " + data.onlineUsers + "</div>");
+				$('#chat').append("<div style='display: none;background:" + data.color + "'' class='new-link' >"  + "<b>" + data.user + " : </b> " + data.message + "</div>")
+				$('#chat').find(".new-link:last").slideDown("fast");
+				
+			});
+
+			function sendMessage() {
+				var msg = $("#message_input").val();
+				document.getElementById("message_input").value = null;
+				console.log("Going : " + msg + " from " + userName + " color: " + userColor);
+				socketio.emit("message_to_server", {
+					message: msg,
+					user: userName,
+					color: userColor
+				});
+
+			}
+
+			window.onunload = function doUnload(e) {
+
+				socketio.emit("message_to_server", {
+					message: "I want out!!!",
+					user: userName
+				});
+
+				socketio.emit("disconnect", function(){
+
+				});
+			}
+
+
+		</script>
+	</head>
+	<body>
+		<div id="userPanelLogin">
+		<input type="text" id="name"/>
+		<button onClick="enterChat()">Enter Chat</button>
+		</div>
+		<div id="userPanel" hidden>
+			<div id="onlineUsrs"></div>
+		</div>
+		
+		<br>
+		<div id="chatControls" hidden>
+		Messsage: <input type="text" id="message_input"/>
+		<button onClick="sendMessage()" id="send" hidden>send</button>
+		</div>
+		<!-- <div id="chat"></div> -->
+		<div id="chat" style="height:500;width:720px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div>
+		<!-- <table id="chatTable" class="imagetable">
+		</table> -->
+
+
+
+	</body>
+	<script type="text/javascript">
+	$("#message_input").keyup(function(event) {
+		if (event.keyCode == 13) {
+			$("#send").click();
+		}
+	});
+	</script>
+</html>
