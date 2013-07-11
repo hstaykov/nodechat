@@ -38,12 +38,27 @@
 
 			function enterChat() {
 				userName = document.getElementById("name").value;
+				var userPassword = document.getElementById("passwordField").value;
 				userColor = get_random_color();
-				$("#userPanelLogin").hide();
-				$("#userPanel").append("Current user: " + userName);
-				$("#userPanel").show();
-				$("#chatControls").show();
 
+			
+				socketio.emit("login_event", {
+					username: userName,
+					password: userPassword
+				});
+
+				socketio.on('login_response', function(data) {
+					if (data.result) {
+						console.log("message");
+						$("#userPanelLogin").fadeOut("fast");
+						$("#userPanel").append("Current user: " + userName).fadeIn("slow");
+						$("#chat").fadeIn("slow");
+						$("#chatControls").slideDown("slow");
+						$("#regPanelBtn").slideUp("slow");
+					} else {
+						$("#wrongPass").slideDown("slow");
+					}
+				});
 			}
 
 			socketio.on("message_to_client", function(data) {
@@ -51,9 +66,9 @@
 				console.log("Incoming : " + data.message);
 				console.log("Color : " + data.color);
 				$("#onlineUsrs").html("<div> Online users: " + data.onlineUsers + "</div>");
-				$('#chat').append("<div style='display: none;background:" + data.color + "'' class='new-link' >"  + "<b>" + data.user + " : </b> " + data.message + "</div>")
+				$('#chat').append("<div style='display: none;background:" + data.color + "'' class='new-link' >" + "<b>" + data.user + " : </b> " + data.message + "</div>")
 				$('#chat').find(".new-link:last").slideDown("fast");
-				
+
 			});
 
 			function sendMessage() {
@@ -68,6 +83,56 @@
 
 			}
 
+			function register(){
+				var regUserName = document.getElementById("regNameField").value;
+				var pass = document.getElementById("regPasswordField").value;
+				var passConfirm = document.getElementById("regPasswordFieldConfirm").value;
+				if (pass != passConfirm){
+					$("#wrongPassMatch").slideDown("slow");
+					document.getElementById("regPasswordField").value = null;
+					document.getElementById("regPasswordFieldConfirm").value = null;
+				}
+				else{
+					socketio.emit("register_user", {
+					username: regUserName,
+					password: pass
+				});
+					 document.getElementById("regNameField").value = null;
+					document.getElementById("regPasswordField").value = null;
+					document.getElementById("regPasswordFieldConfirm").value = null;
+					$("#userPanelLogin").slideDown("slow");
+					$("#userPanelRegister").slideUp("slow");
+					$("#closeRegBtn").slideUp("slow");
+				}
+			}
+
+
+			function openRegFrom(){
+				$("#userPanelLogin").slideUp("slow");
+				$("#userPanelRegister").slideDown("slow");
+				$("#closeRegBtn").slideDown("slow");
+				$("#regPanelBtn").slideUp("slow");
+			}
+
+			function closeRegFrom(){
+				$("#userPanelLogin").slideDown("slow");
+				$("#userPanelRegister").slideUp("slow");
+				$("#closeRegBtn").slideUp("slow");
+				$("#regPanelBtn").slideDown("slow");
+			}
+
+
+			function sendCustomEvent() {
+				socketio.emit("custom_event", {
+					object: "Test"
+				});
+			}
+
+			socketio.on('custom_event_to_client', function(data) {
+				alert(data.signal);
+				console.log(data.signal);
+			});
+
 			window.onunload = function doUnload(e) {
 
 				socketio.emit("message_to_server", {
@@ -75,7 +140,7 @@
 					user: userName
 				});
 
-				socketio.emit("disconnect", function(){
+				socketio.emit("disconnect", function() {
 
 				});
 			}
@@ -84,31 +149,56 @@
 		</script>
 	</head>
 	<body>
+
 		<div id="userPanelLogin">
-		<input type="text" id="name"/>
-		<button onClick="enterChat()">Enter Chat</button>
+		<label> User Name: </label>
+		<input type="text" id="name"/></br></br>
+		<label> Password: </label>
+		<input type="password" id="passwordField"/></br>
+		<label id="wrongPass" hidden>Wrong Username or Password</label>
 		</div>
+
+		<div id="userPanelRegister" hidden>
+		<label> User Name: </label>
+		<input type="text" id="regNameField"/></br></br>
+		<label> Password: </label>
+		<input type="password" id="regPasswordField"/></br><br>
+		<label> Password Agains: </label>
+		<input type="password" id="regPasswordFieldConfirm"/></br>
+		<button onClick="register()">Register</button>
+		<label id="wrongPassMatch" hidden>Passwords does not match</label>
+		</div>
+
+
 		<div id="userPanel" hidden>
 			<div id="onlineUsrs"></div>
 		</div>
 		
 		<br>
+
 		<div id="chatControls" hidden>
-		Messsage: <input type="text" id="message_input"/>
-		<button onClick="sendMessage()" id="send" hidden>send</button>
+		<label>Messsage: </label>
+		</br>
+		<input type="text" id="message_input"/>
 		</div>
-		<!-- <div id="chat"></div> -->
-		<div id="chat" style="height:500;width:720px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div>
-		<!-- <table id="chatTable" class="imagetable">
-		</table> -->
+		<br>
+		<br>
 
-
-
+		<div id="chat" style="height:200;width:420px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;" hidden></div>
+		<button onClick="sendCustomEvent()">Event</button>
+		<button onClick="openRegFrom()" id="regPanelBtn">Register Panel</button>
+		<button onClick="closeRegFrom()" id="closeRegBtn" hidden>Exit Register Panel</button>
 	</body>
 	<script type="text/javascript">
 	$("#message_input").keyup(function(event) {
 		if (event.keyCode == 13) {
-			$("#send").click();
+			sendMessage();
+		}
+	});
+
+	$("#passwordField").keyup(function(event) {
+		if (event.keyCode == 13) {
+			enterChat();
 		}
 	});
 	</script>
