@@ -2,7 +2,7 @@
 {
 text-align: center;
 width:200px;
-height:50px;
+height:100px;
 background-color:#bbb;
 background: rgba(0, 0, 0, 0.16);
 box-shadow: 10px 10px 5px #888888;
@@ -84,4 +84,15 @@ input, button, label {
 
 #wrongPass{
 	color: red;
+}
+
+
+
+#currentOnlineUsers{
+  border:2px solid #a8a7a8;
+  color: #a8a7a8;
+}
+
+.chatWindows{
+  height:200;width:420px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;
 }
